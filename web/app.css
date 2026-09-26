@@ -33,15 +33,15 @@ button { font: inherit; cursor: pointer; }
 #error { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; color: var(--red); background: color-mix(in srgb, var(--red) 12%, var(--card)); }
 .accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(0, 430px)); grid-auto-rows: 1fr; gap: 14px; }
 .account { min-width: 0; padding: 11px; border: 1px solid color-mix(in srgb, var(--text) 18%, var(--line)); border-radius: 14px; background: var(--card); box-shadow: 0 2px 9px var(--card-shadow); }
-.heading { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.heading { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 50px; }
 .plan { flex: none; padding: 5px 10px; border-radius: 999px; font-weight: 750; font-size: 12px; }
 .plan.plus { color: #248259; background: #d9f1e3; }
 .plan.pro { color: #6751a8; background: #e8e0fa; }
 .plan.team { color: #3c68a8; background: #dceafa; }
 .plan.neutral { color: var(--muted); background: var(--line); }
 .account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 730; }
-.status { margin-left: auto; flex: none; color: var(--green); font-size: 12px; }
-.status.off { color: var(--muted); }
+.status { margin-left: auto; flex: none; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--green) 40%, var(--line)); border-radius: 999px; color: var(--green); background: color-mix(in srgb, var(--green) 9%, var(--card)); font-size: 12px; }
+.status.off { border-color: var(--line); color: var(--muted); background: var(--card); }
 .expiry { display: flex; flex-wrap: wrap; gap: 4px 7px; margin: 7px 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 11px; }
 .expiry .label { color: var(--muted); }
 .expiry .date { font-weight: 700; }

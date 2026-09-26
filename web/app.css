@@ -29,7 +29,7 @@ button { font: inherit; cursor: pointer; }
 #reload { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; color: var(--green); background: var(--card); font-size: 25px; line-height: 1; }
 #reload:disabled { opacity: .5; cursor: default; }
 #error { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; color: var(--red); background: color-mix(in srgb, var(--red) 12%, var(--card)); }
-.accounts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(0, 500px)); grid-auto-rows: 1fr; gap: 14px; }
 .account { min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); }
 .heading { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .plan { flex: none; padding: 7px 11px; border-radius: 999px; font-weight: 750; font-size: 13px; }
@@ -37,7 +37,7 @@ button { font: inherit; cursor: pointer; }
 .plan.pro { color: #6751a8; background: #e8e0fa; }
 .plan.team { color: #3c68a8; background: #dceafa; }
 .plan.neutral { color: var(--muted); background: var(--line); }
-.account-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 730; }
+.account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 730; }
 .status { margin-left: auto; flex: none; color: var(--green); font-size: 12px; }
 .status.off { color: var(--muted); }
 .expiry { display: flex; flex-wrap: wrap; gap: 4px 9px; margin: 14px 0 17px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 13px; font-size: 13px; }
@@ -48,7 +48,7 @@ button { font: inherit; cursor: pointer; }
 .expiry .date.expired { color: var(--red); }
 .expiry .relative { color: var(--muted); }
 .window { margin-top: 16px; }
-.window-line { display: flex; align-items: baseline; gap: 7px; min-width: 0; font-size: 14px; }
+.window-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; min-width: 0; font-size: 14px; }
 .window-title { font-weight: 680; white-space: nowrap; }
 .window-value { margin-left: auto; font-weight: 760; white-space: nowrap; }
 .window-reset { color: var(--muted); font-size: 12px; white-space: nowrap; }
@@ -58,4 +58,4 @@ button { font: inherit; cursor: pointer; }
 .fill.low { background: var(--red); }
 .foot { margin: 16px 0 0; color: var(--muted); font-size: 12px; }
 .empty { margin: 18px 0; color: var(--muted); }
-@media (max-width: 520px) { .account { padding: 14px; } .window-line { flex-wrap: wrap; } .window-reset { width: 100%; margin-top: -4px; } }
+@media (max-width: 540px) { .accounts { grid-template-columns: minmax(0, 1fr); } .account { padding: 14px; } .window-reset { width: 100%; margin-top: -4px; } }

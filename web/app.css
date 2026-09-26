@@ -29,25 +29,25 @@ button { font: inherit; cursor: pointer; }
 #reload { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; color: var(--green); background: var(--card); font-size: 25px; line-height: 1; }
 #reload:disabled { opacity: .5; cursor: default; }
 #error { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; color: var(--red); background: color-mix(in srgb, var(--red) 12%, var(--card)); }
-.accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(0, 450px)); grid-auto-rows: 1fr; gap: 14px; }
-.account { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(0, 430px)); grid-auto-rows: 1fr; gap: 14px; }
+.account { min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
 .heading { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.plan { flex: none; padding: 4px 9px; border-radius: 999px; font-weight: 750; font-size: 11px; }
+.plan { flex: none; padding: 5px 10px; border-radius: 999px; font-weight: 750; font-size: 12px; }
 .plan.plus { color: #248259; background: #d9f1e3; }
 .plan.pro { color: #6751a8; background: #e8e0fa; }
 .plan.team { color: #3c68a8; background: #dceafa; }
 .plan.neutral { color: var(--muted); background: var(--line); }
-.account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 730; }
+.account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 730; }
 .status { margin-left: auto; flex: none; color: var(--green); font-size: 12px; }
 .status.off { color: var(--muted); }
-.expiry { display: flex; flex-wrap: wrap; gap: 4px 7px; margin: 10px 0 11px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 11px; }
+.expiry { display: flex; flex-wrap: wrap; gap: 4px 7px; margin: 7px 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 11px; }
 .expiry .label { color: var(--muted); }
 .expiry .date { font-weight: 700; }
 .expiry .date.valid { color: var(--green); }
 .expiry .date.soon { color: var(--amber); }
 .expiry .date.expired { color: var(--red); }
 .expiry .relative { color: var(--muted); }
-.window { margin-top: 10px; }
+.window { margin-top: 7px; }
 .window-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; min-width: 0; font-size: 12px; }
 .window-title { font-weight: 680; white-space: nowrap; }
 .window-value { margin-left: auto; font-weight: 760; white-space: nowrap; }
@@ -56,6 +56,6 @@ button { font: inherit; cursor: pointer; }
 .fill { height: 100%; border-radius: inherit; background: var(--green); }
 .fill.medium { background: var(--amber); }
 .fill.low { background: var(--red); }
-.foot { margin: 10px 0 0; color: var(--muted); font-size: 11px; }
+.foot { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
 .empty { margin: 18px 0; color: var(--muted); }
-@media (max-width: 490px) { .accounts { grid-template-columns: minmax(0, 1fr); } .window-reset { width: 100%; margin-top: -4px; } }
+@media (max-width: 470px) { .accounts { grid-template-columns: minmax(0, 1fr); } .window-reset { width: 100%; margin-top: -4px; } }

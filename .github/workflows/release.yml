@@ -1,0 +1,60 @@
+name: Build and release Linux amd64 plugin
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust 1.97
+        run: |
+          rustup toolchain install 1.97.0 --profile minimal --component rustfmt
+          rustup default 1.97.0
+      - name: Set release version
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path('plugin.json')
+          manifest = json.loads(path.read_text(encoding='utf-8'))
+          version = f'0.1.{os.environ["GITHUB_RUN_NUMBER"]}'
+          manifest['version'] = version
+          path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env:
+              env.write(f'PLUGIN_VERSION={version}\n')
+          PY
+      - name: Test and build plugin
+        run: |
+          cargo fmt --check
+          cargo test --locked
+          cargo build --release --locked --target x86_64-unknown-linux-gnu
+      - name: Package for codex-proxy-rs v3.15.2
+        run: |
+          git clone --depth 1 --branch v3.15.2 https://github.com/zyycn/codex-proxy-rs.git temp/codex-proxy-rs
+          cargo run --manifest-path temp/codex-proxy-rs/backend/Cargo.toml \
+            -p codex-proxy-plugin-cli --release --locked -- package \
+            --manifest plugin.json \
+            --binary target/x86_64-unknown-linux-gnu/release/cpr-plugin-cx-panel \
+            --target x86_64-unknown-linux-gnu \
+            --resource-map web=web \
+            --output-dir dist
+      - name: Publish latest stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${PLUGIN_VERSION}" dist/*.tar.gz dist/*.sha256 \
+            --target "$GITHUB_SHA" \
+            --title "v${PLUGIN_VERSION}" \
+            --notes "Codex 额度面板，Linux amd64；兼容 codex-proxy-rs v3.15.2 及清单声明的版本范围。" \
+            --latest

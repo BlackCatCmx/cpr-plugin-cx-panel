@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Codex 额度</title>
+    <link rel="stylesheet" href="./app.css">
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <div class="toolbar">
+        <p id="summary">正在读取账号…</p>
+        <button id="reload" type="button" aria-label="重新读取缓存" title="重新读取缓存">↻</button>
+      </div>
+      <div id="error" role="alert" hidden></div>
+      <div id="accounts" class="accounts"></div>
+    </main>
+  </body>
+</html>

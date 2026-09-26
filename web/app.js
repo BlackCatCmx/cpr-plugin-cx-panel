@@ -2,6 +2,13 @@ const accountsNode = document.querySelector('#accounts');
 const summaryNode = document.querySelector('#summary');
 const errorNode = document.querySelector('#error');
 const reloadButton = document.querySelector('#reload');
+const paginationNode = document.querySelector('#pagination');
+const previousButton = document.querySelector('#previous');
+const nextButton = document.querySelector('#next');
+const pageInfoNode = document.querySelector('#page-info');
+const pageSize = 30;
+let accounts = [];
+let page = 0;
 let loading = false;
 
 function element(tag, className, value) {
@@ -99,6 +106,17 @@ function renderAccount(account) {
   return card;
 }
 
+function renderPage() {
+  const pageCount = Math.ceil(accounts.length / pageSize);
+  page = Math.min(page, Math.max(0, pageCount - 1));
+  accountsNode.replaceChildren(...accounts.slice(page * pageSize, (page + 1) * pageSize).map(renderAccount));
+  if (!accounts.length) accountsNode.append(element('p', 'empty', '暂无 Codex OAuth 账号'));
+  paginationNode.hidden = pageCount <= 1;
+  pageInfoNode.textContent = `第 ${page + 1} / ${pageCount} 页 · 每页 ${pageSize} 个`;
+  previousButton.disabled = page === 0;
+  nextButton.disabled = page >= pageCount - 1;
+}
+
 async function refresh() {
   if (loading || document.hidden) return;
   loading = true;
@@ -107,9 +125,9 @@ async function refresh() {
     const reply = await window.codexProxyPlugin.request({ method: 'GET', path: 'api/accounts' });
     if (reply.status !== 200) throw new Error(`读取失败（${reply.status}）`);
     const payload = JSON.parse(new TextDecoder().decode(reply.body));
-    accountsNode.replaceChildren(...payload.accounts.map(renderAccount));
-    if (!payload.accounts.length) accountsNode.append(element('p', 'empty', '暂无 Codex OAuth 账号'));
-    summaryNode.textContent = `${payload.accounts.length} 个账号 · 每 30 秒读取一次缓存`;
+    accounts = payload.accounts;
+    renderPage();
+    summaryNode.textContent = `${accounts.length} 个账号 · 每 30 秒读取一次缓存`;
     errorNode.hidden = true;
   } catch (error) {
     errorNode.textContent = `读取账号失败：${error.message}`;
@@ -125,6 +143,8 @@ function applyTheme() {
 }
 
 reloadButton.addEventListener('click', refresh);
+previousButton.addEventListener('click', () => { page--; renderPage(); });
+nextButton.addEventListener('click', () => { page++; renderPage(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 window.addEventListener('codex-proxy-themechange', applyTheme);
 applyTheme();

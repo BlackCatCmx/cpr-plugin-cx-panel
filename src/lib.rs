@@ -3,7 +3,9 @@ use gateway_plugin_sdk::{
     ErrorCode, PluginFault,
     call::{
         data::{QuotaFactsQuery, QuotaWindowFacts},
-        host::{AuthCredential, AuthListRequest, AuthListResult, AuthRuntimeAccount},
+        host::{
+            AuthCredential, AuthGetRequest, AuthListRequest, AuthListResult, AuthRuntimeAccount,
+        },
         management::{
             ManagementPage, ManagementRegistration, ManagementRequest, ManagementResource,
             ManagementResponse, ManagementRoute,
@@ -11,9 +13,125 @@ use gateway_plugin_sdk::{
     },
     client::{ComposedPlugin, HostClient, PluginBuilder, SessionError, TypedCall, TypedReply},
 };
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use std::{sync::Arc, time::Duration};
+use tokio::sync::Mutex;
+
+#[derive(Deserialize)]
+pub struct PanelConfig {
+    #[serde(default)]
+    admin_username: String,
+    admin_password: String,
+    admin_port: Option<u16>,
+}
+
+pub struct AdminClient {
+    client: reqwest::Client,
+    base_url: String,
+    username: String,
+    password: String,
+    session: Mutex<Option<String>>,
+}
+
+impl AdminClient {
+    pub fn new(config: PanelConfig) -> Result<Self, reqwest::Error> {
+        let port = config
+            .admin_port
+            .or_else(|| {
+                std::env::var("CPR_SERVER_PORT")
+                    .ok()
+                    .and_then(|value| value.parse().ok())
+            })
+            .unwrap_or(8080);
+        Ok(Self {
+            client: reqwest::Client::builder()
+                .no_proxy()
+                .redirect(reqwest::redirect::Policy::none())
+                .timeout(Duration::from_secs(65))
+                .build()?,
+            base_url: format!("http://127.0.0.1:{port}"),
+            username: config.admin_username,
+            password: config.admin_password,
+            session: Mutex::new(None),
+        })
+    }
+
+    async fn login(&self) -> Result<String, String> {
+        let username = if self.username.is_empty() {
+            None
+        } else {
+            Some(self.username.as_str())
+        };
+        let login = self
+            .client
+            .post(format!("{}/api/auth/login", self.base_url))
+            .json(&json!({"mode": "admin", "username": username, "password": self.password}))
+            .send()
+            .await
+            .map_err(|_| "连接 CPR 管理接口失败，请检查内部端口".to_string())?;
+        if !login.status().is_success() {
+            return Err("管理员登录失败，请检查用户名和密码".into());
+        }
+        login
+            .headers()
+            .get(reqwest::header::SET_COOKIE)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.split(';').next())
+            .map(str::to_owned)
+            .ok_or_else(|| "CPR 未返回管理会话".to_string())
+    }
+
+    async fn post_with_cookie(
+        &self,
+        path: &str,
+        body: &Value,
+        cookie: &str,
+    ) -> Result<reqwest::Response, String> {
+        self.client
+            .post(format!("{}{}", self.base_url, path))
+            .header(reqwest::header::COOKIE, cookie)
+            .json(body)
+            .send()
+            .await
+            .map_err(|_| "CPR 管理请求失败".to_string())
+    }
+
+    async fn post(&self, path: &str, body: Value) -> Result<(), String> {
+        let cookie = {
+            let mut session = self.session.lock().await;
+            if session.is_none() {
+                *session = Some(self.login().await?);
+            }
+            session.clone().unwrap()
+        };
+        let mut response = self.post_with_cookie(path, &body, &cookie).await?;
+        if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+            let new_cookie = {
+                let mut session = self.session.lock().await;
+                if session.as_deref() == Some(cookie.as_str()) {
+                    *session = Some(self.login().await?);
+                }
+                session.clone().unwrap()
+            };
+            response = self.post_with_cookie(path, &body, &new_cookie).await?;
+        }
+        if !response.status().is_success() {
+            return Err(format!(
+                "CPR 管理请求失败（{}）",
+                response.status().as_u16()
+            ));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct AccountAction {
+    account_id: String,
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -30,20 +148,36 @@ struct AccountView {
     error: Option<&'static str>,
 }
 
-pub fn plugin() -> Result<ComposedPlugin, gateway_plugin_sdk::client::AuthorError> {
+pub fn plugin(
+    admin: Arc<AdminClient>,
+) -> Result<ComposedPlugin, gateway_plugin_sdk::client::AuthorError> {
     PluginBuilder::from_json(include_bytes!("../plugin.json"))?
-        .management(registration(), handle)?
+        .management(registration(), move |call| {
+            let admin = Arc::clone(&admin);
+            async move { handle(call, &admin).await }
+        })?
         .build()
 }
 
 fn registration() -> ManagementRegistration {
     ManagementRegistration {
-        routes: vec![ManagementRoute {
-            method: "GET".into(),
-            path: "api/accounts".into(),
-            request_content_types: Vec::new(),
+        routes: [
+            ("GET", "api/accounts"),
+            ("POST", "api/refresh"),
+            ("POST", "api/status"),
+        ]
+        .into_iter()
+        .map(|(method, path)| ManagementRoute {
+            method: method.into(),
+            path: path.into(),
+            request_content_types: if method == "POST" {
+                vec!["application/json".into()]
+            } else {
+                Vec::new()
+            },
             response_content_types: vec!["application/json".into()],
-        }],
+        })
+        .collect(),
         resources: ["web/index.html", "web/app.css", "web/app.js"]
             .into_iter()
             .map(|path| ManagementResource {
@@ -54,7 +188,7 @@ fn registration() -> ManagementRegistration {
         pages: vec![ManagementPage {
             id: "codex-quota".into(),
             title: "Codex 额度".into(),
-            description: Some("账号被动额度与令牌中的套餐信息".into()),
+            description: Some("账号额度与调度状态".into()),
             entry: "web/index.html".into(),
             icon: None,
         }],
@@ -64,22 +198,76 @@ fn registration() -> ManagementRegistration {
 
 async fn handle(
     call: TypedCall<ManagementRequest>,
+    admin: &AdminClient,
 ) -> Result<TypedReply<ManagementResponse>, PluginFault> {
-    if call.request.method != "GET"
-        || call.request.path != "api/accounts"
-        || !call.request.query.is_empty()
-        || !call.payload.is_empty()
-    {
+    if !call.request.query.is_empty() {
         return Err(PluginFault::new(
             ErrorCode::InvalidInput,
             "invalid panel request",
         ));
     }
-    let accounts = load_accounts(&call.host).await?;
-    let payload = serde_json::to_vec(&json!({ "accounts": accounts }))
+    let result = match (call.request.method.as_str(), call.request.path.as_str()) {
+        ("GET", "api/accounts") if call.payload.is_empty() => {
+            json!({ "accounts": load_accounts(&call.host).await? })
+        }
+        ("POST", "api/refresh" | "api/status")
+            if call.request.content_type.as_deref() == Some("application/json") =>
+        {
+            let action: AccountAction = serde_json::from_slice(&call.payload)
+                .map_err(|_| PluginFault::new(ErrorCode::InvalidInput, "invalid account action"))?;
+            let account: AuthRuntimeAccount = auth_call(
+                &call.host,
+                "host.auth.get_runtime",
+                &AuthGetRequest {
+                    account_id: action.account_id,
+                },
+            )
+            .await?;
+            if account.provider_id != "openai" || account.authentication_kind != "oauth" {
+                return Err(PluginFault::new(
+                    ErrorCode::InvalidInput,
+                    "account is not Codex OAuth",
+                ));
+            }
+            let operation = if call.request.path == "api/refresh" {
+                admin
+                    .post(
+                        "/api/admin/accounts/quota/refresh",
+                        json!({"accountId": account.account_id}),
+                    )
+                    .await
+            } else {
+                admin
+                    .post(
+                        "/api/admin/accounts/batch-update",
+                        json!({
+                            "accountIds": [account.account_id],
+                            "enabled": !account.enabled,
+                        }),
+                    )
+                    .await
+            };
+            match operation {
+                Ok(()) => json!({"ok": true}),
+                Err(message) => json!({"error": message}),
+            }
+        }
+        _ => {
+            return Err(PluginFault::new(
+                ErrorCode::InvalidInput,
+                "invalid panel request",
+            ));
+        }
+    };
+    let status = if result.get("error").is_some() {
+        502
+    } else {
+        200
+    };
+    let payload = serde_json::to_vec(&result)
         .map_err(|_| PluginFault::new(ErrorCode::Fault, "panel response failed"))?;
     Ok(TypedReply::new(ManagementResponse {
-        status: 200,
+        status,
         content_type: "application/json".into(),
     })
     .with_payload(payload))

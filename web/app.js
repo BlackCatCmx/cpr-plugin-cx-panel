@@ -10,6 +10,9 @@ const pageSize = 30;
 let accounts = [];
 let page = 0;
 let loading = false;
+let reloadAfterLoad = false;
+const busyAccounts = new Set();
+const actionErrors = new Map();
 
 function element(tag, className, value) {
   const node = document.createElement(tag);
@@ -88,7 +91,20 @@ function renderAccount(account) {
   heading.append(title);
   const states = { ready: '正常', expired: '凭据过期', banned: '已封禁', invalid: '凭据无效', unknown: '待验证' };
   const status = account.enabled ? states[account.credentialState] : '已停用';
-  heading.append(element('span', `status ${account.enabled && account.credentialState === 'ready' ? '' : 'off'}`, `● ${status}`));
+  const statusButton = element('button', `status ${account.enabled && account.credentialState === 'ready' ? '' : 'off'}`, `● ${status}`);
+  statusButton.type = 'button';
+  statusButton.title = account.enabled ? '停用账号调度' : '启用账号调度';
+  statusButton.setAttribute('aria-label', statusButton.title);
+  statusButton.disabled = busyAccounts.has(account.id);
+  statusButton.addEventListener('click', () => accountAction(account, 'api/status'));
+  heading.append(statusButton);
+  const refreshButton = element('button', 'account-refresh', '↻');
+  refreshButton.type = 'button';
+  refreshButton.title = account.enabled ? '主动刷新额度' : '已停用账号不能刷新额度';
+  refreshButton.setAttribute('aria-label', `刷新 ${account.email || account.name || account.id} 的额度`);
+  refreshButton.disabled = !account.enabled || busyAccounts.has(account.id);
+  refreshButton.addEventListener('click', () => accountAction(account, 'api/refresh'));
+  heading.append(refreshButton);
   card.append(heading);
 
   const expiry = element('div', 'expiry');
@@ -103,7 +119,30 @@ function renderAccount(account) {
   else card.append(element('p', 'empty', '等待被动额度数据'));
   if (account.error) card.append(element('p', 'foot', account.error));
   else if (account.observedAtMs !== null) card.append(element('p', 'foot', `额度采集于 ${dateTime(account.observedAtMs)}`));
+  if (actionErrors.has(account.id)) card.append(element('p', 'foot action-error', actionErrors.get(account.id)));
   return card;
+}
+
+async function accountAction(account, path) {
+  if (busyAccounts.has(account.id)) return;
+  busyAccounts.add(account.id);
+  actionErrors.delete(account.id);
+  renderPage();
+  try {
+    const reply = await window.codexProxyPlugin.request({
+      method: 'POST', path, contentType: 'application/json',
+      body: JSON.stringify({ accountId: account.id }),
+    });
+    const payload = JSON.parse(new TextDecoder().decode(reply.body));
+    if (reply.status !== 200) throw new Error(payload.error || `操作失败（${reply.status}）`);
+    if (loading) reloadAfterLoad = true;
+    else await refresh();
+  } catch (error) {
+    actionErrors.set(account.id, error.message);
+  } finally {
+    busyAccounts.delete(account.id);
+    renderPage();
+  }
 }
 
 function renderPage() {
@@ -135,6 +174,10 @@ async function refresh() {
   } finally {
     loading = false;
     reloadButton.disabled = false;
+    if (reloadAfterLoad) {
+      reloadAfterLoad = false;
+      void refresh();
+    }
   }
 }
 

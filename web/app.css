@@ -40,8 +40,11 @@ button { font: inherit; cursor: pointer; }
 .plan.team { color: #3c68a8; background: #dceafa; }
 .plan.neutral { color: var(--muted); background: var(--line); }
 .account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 730; }
-.status { margin-left: auto; flex: none; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--green) 40%, var(--line)); border-radius: 999px; color: var(--green); background: color-mix(in srgb, var(--green) 9%, var(--card)); font-size: 12px; }
+.status { margin-left: auto; flex: none; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--green) 40%, var(--line)); border-radius: 999px; color: var(--green); background: color-mix(in srgb, var(--green) 9%, var(--card)); font-size: 12px; cursor: pointer; }
 .status.off { border-color: var(--line); color: var(--muted); background: var(--card); }
+.status:disabled, .account-refresh:disabled { opacity: .5; cursor: default; }
+.account-refresh { flex: none; width: 28px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--green); background: var(--card); font-size: 20px; line-height: 1; }
+.action-error { color: var(--red); }
 .expiry { display: flex; flex-wrap: wrap; gap: 4px 7px; margin: 7px 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 10px; font-size: 11px; }
 .expiry .label { color: var(--muted); }
 .expiry .date { font-weight: 700; }

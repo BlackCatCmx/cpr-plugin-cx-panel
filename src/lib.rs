@@ -269,6 +269,7 @@ async fn handle(
     Ok(TypedReply::new(ManagementResponse {
         status,
         content_type: "application/json".into(),
+        headers: Vec::new(),
     })
     .with_payload(payload))
 }
@@ -390,6 +391,19 @@ fn jwt_subscription(token: Option<&Value>) -> (Option<String>, Option<Value>) {
 mod tests {
     use super::*;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+
+    #[test]
+    fn manifest_registers_management_page() {
+        let admin = Arc::new(
+            AdminClient::new(PanelConfig {
+                admin_username: String::new(),
+                admin_password: "test".into(),
+                admin_port: Some(8080),
+            })
+            .unwrap(),
+        );
+        assert!(plugin(admin).is_ok());
+    }
 
     #[test]
     fn reads_subscription_claim_without_exposing_token() {

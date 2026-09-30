@@ -1,13 +1,13 @@
 [package]
 name = "cpr-plugin-cx-panel"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.97"
 publish = false
 
 [dependencies]
 base64 = "0.22.1"
-gateway-plugin-sdk = { git = "https://github.com/zyycn/codex-proxy-rs.git", rev = "589e1bc999a8b110201b7fdcbf32d2e75bf08253", features = ["io"] }
+gateway-plugin-sdk = { git = "https://github.com/zyycn/codex-proxy-rs.git", rev = "e30aad475560b94db2d999e2251d180e45d52671", features = ["io"] }
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"

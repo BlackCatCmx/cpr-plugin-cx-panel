@@ -28,7 +28,7 @@ jobs:
           from pathlib import Path
           path = Path('plugin.json')
           manifest = json.loads(path.read_text(encoding='utf-8'))
-          version = f'0.1.{os.environ["GITHUB_RUN_NUMBER"]}'
+          version = f'0.2.{os.environ["GITHUB_RUN_NUMBER"]}'
           manifest['version'] = version
           path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env:
@@ -39,9 +39,9 @@ jobs:
           cargo fmt --check
           cargo test --locked
           cargo build --release --locked --target x86_64-unknown-linux-gnu
-      - name: Package for codex-proxy-rs v3.15.2
+      - name: Package for codex-proxy-rs v3.18.2
         run: |
-          git clone --depth 1 --branch v3.15.2 https://github.com/zyycn/codex-proxy-rs.git temp/codex-proxy-rs
+          git clone --depth 1 --branch v3.18.2 https://github.com/zyycn/codex-proxy-rs.git temp/codex-proxy-rs
           cargo run --manifest-path temp/codex-proxy-rs/backend/Cargo.toml \
             -p codex-proxy-plugin-cli --release --locked -- package \
             --manifest plugin.json \
@@ -56,5 +56,5 @@ jobs:
           gh release create "v${PLUGIN_VERSION}" dist/*.tar.gz dist/*.sha256 \
             --target "$GITHUB_SHA" \
             --title "v${PLUGIN_VERSION}" \
-            --notes "Codex 额度面板，Linux amd64；兼容 codex-proxy-rs v3.15.2 及清单声明的版本范围。" \
+            --notes "Codex 额度面板，Linux amd64；兼容 codex-proxy-rs v3.18.2 及清单声明的版本范围。" \
             --latest

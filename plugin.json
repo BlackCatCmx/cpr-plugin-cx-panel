@@ -1,16 +1,15 @@
 {
-  "manifestVersion": 1,
+  "manifestVersion": 2,
   "name": "cx-panel",
   "displayName": "Codex 额度面板",
   "publisher": "blackcatcmx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "展示 Codex 额度并管理账号调度状态",
   "license": "MIT",
-  "engines": { "codex-proxy-rs": ">=3.15.2, <4.0.0" },
+  "engines": { "codex-proxy-rs": ">=3.18.2, <4.0.0" },
   "main": "bin/plugin",
   "runtime": "trustedProcess",
   "contributes": { "management": {} },
-  "permissions": ["accounts", "data"],
   "configurationSchema": {
     "type": "object",
     "properties": {

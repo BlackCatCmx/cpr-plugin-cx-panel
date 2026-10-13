@@ -80,11 +80,11 @@ function renderWindow(windowData) {
 }
 
 function renderAccount(account) {
-  const card = element('article', 'account');
+  const card = element('article', `account${account.enabled ? '' : ' account-disabled'}`);
   const heading = element('div', 'heading');
   const plan = String(account.plan || '未知').trim();
   const lower = plan.toLowerCase();
-  const tone = lower.includes('team') ? 'team' : lower.includes('pro') ? 'pro' : lower.includes('plus') ? 'plus' : 'neutral';
+  const tone = lower.includes('k12') ? 'k12' : lower.includes('team') ? 'team' : lower.includes('pro') ? 'pro' : lower.includes('plus') ? 'plus' : 'neutral';
   heading.append(element('span', `plan ${tone}`, plan.toUpperCase()));
   const title = element('span', 'account-name', account.email || account.name || account.id);
   title.title = account.email || account.name || account.id;

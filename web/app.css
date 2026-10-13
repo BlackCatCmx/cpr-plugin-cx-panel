@@ -34,11 +34,14 @@ button { font: inherit; cursor: pointer; }
 .accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(0, 430px)); grid-auto-rows: 1fr; gap: 14px; }
 .account { min-width: 0; padding: 11px; border: 1px solid color-mix(in srgb, var(--text) 18%, var(--line)); border-radius: 14px; background: var(--card); box-shadow: 0 2px 9px var(--card-shadow); }
 .heading { display: flex; align-items: center; gap: 9px; min-width: 0; min-height: 50px; }
-.plan { flex: none; padding: 5px 10px; border-radius: 999px; font-weight: 750; font-size: 12px; }
-.plan.plus { color: #248259; background: #d9f1e3; }
-.plan.pro { color: #6751a8; background: #e8e0fa; }
-.plan.team { color: #3c68a8; background: #dceafa; }
+.plan { display: inline-flex; align-items: center; justify-content: center; flex: none; height: 24px; padding: 2px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--card); box-shadow: 0 1px 2px rgba(0, 0, 0, .06); font-size: 10.5px; font-weight: 750; line-height: 1; letter-spacing: .025em; }
+.plan.plus { border-color: rgba(16, 185, 129, .38); background: linear-gradient(135deg, #ecfdf5, #a7f3d0); color: #087653; }
+.plan.pro { border-color: rgba(217, 165, 22, .72); background: radial-gradient(circle at 18% 24%, #fff 0%, rgba(255, 255, 255, .3) 35%, transparent 43%), linear-gradient(135deg, #fff9e3 0%, #ffe07f 52%, #e0aa14 100%); color: #6b4b00; box-shadow: 0 0 13px rgba(255, 214, 98, .25); }
+.plan.team, .plan.k12 { border-color: rgba(139, 92, 246, .38); background: linear-gradient(135deg, #f5f3ff, #c4b5fd); color: #6740bd; }
 .plan.neutral { color: var(--muted); background: var(--line); }
+:root[data-theme="dark"] .plan.plus { background: linear-gradient(135deg, #12352b, #176149); color: #a7f3d0; }
+:root[data-theme="dark"] .plan.pro { background: linear-gradient(135deg, #4f3d0b, #8f6d10); color: #fff0a8; }
+:root[data-theme="dark"] .plan.team, :root[data-theme="dark"] .plan.k12 { background: linear-gradient(135deg, #281f46, #483580); color: #ddd6fe; }
 .account-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 730; }
 .status { margin-left: auto; flex: none; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--green) 40%, var(--line)); border-radius: 999px; color: var(--green); background: color-mix(in srgb, var(--green) 9%, var(--card)); font-size: 12px; cursor: pointer; }
 .status.off { border-color: var(--line); color: var(--muted); background: var(--card); }
@@ -61,6 +64,10 @@ button { font: inherit; cursor: pointer; }
 .fill { height: 100%; border-radius: inherit; background: var(--green); }
 .fill.medium { background: var(--amber); }
 .fill.low { background: var(--red); }
+.account.account-disabled .plan, .account.account-disabled .account-name, .account.account-disabled .expiry, .account.account-disabled .window { opacity: .66; }
+.account.account-disabled .plan { border-color: var(--line); color: var(--muted); background: var(--line); box-shadow: none; }
+.account.account-disabled .expiry .date { color: var(--muted); }
+.account.account-disabled .fill { background: var(--muted); }
 .foot { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
 .empty { margin: 18px 0; color: var(--muted); }
 .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 18px; color: var(--muted); font-size: 12px; }

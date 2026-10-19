@@ -3,13 +3,13 @@
   "name": "cx-panel",
   "displayName": "Codex 额度面板",
   "publisher": "blackcatcmx",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "展示 Codex 额度并管理账号调度状态",
   "license": "MIT",
-  "engines": { "codex-proxy-rs": ">=3.18.2, <4.0.0" },
+  "engines": { "codex-proxy-rs": ">=3.29.3, <4.0.0" },
   "main": "bin/plugin",
   "runtime": "trustedProcess",
-  "contributes": { "management": {} },
+  "contributes": { "management": { "version": 2 } },
   "configurationSchema": {
     "type": "object",
     "properties": {

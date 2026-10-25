@@ -12,4 +12,4 @@ codex-proxy-rs 的独立管理页面插件，展示 OpenAI Codex OAuth 账号的
 
 插件通过宿主回调读取账号名称、套餐、ID Token 和已有额度；账号启停和主动刷新通过本机管理接口执行。安装时请核对插件来源。
 
-当前按 codex-proxy-rs v3.29.3 的 SDK 和打包工具构建，使用 RPC v4 和 management v2，支持 3.29.3 至 4.0.0 之前的宿主版本。源码构建需要 Rust 1.99.1 或更高版本。
+当前按 codex-proxy-rs v3.31.1 的 SDK 和打包工具构建，使用 RPC v5 和 management v2，宿主版本要求为 3.31.1 至 4.0.0 之前。源码构建需要 Rust 1.99.1 或更高版本。

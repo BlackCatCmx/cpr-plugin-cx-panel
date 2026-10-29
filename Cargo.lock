@@ -46,7 +46,7 @@ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
 name = "cpr-plugin-cx-panel"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "base64 0.22.1",
  "gateway-plugin-sdk",
@@ -112,7 +112,7 @@ dependencies = [
 [[package]]
 name = "gateway-plugin-sdk"
 version = "0.1.0"
-source = "git+https://github.com/zyycn/codex-proxy-rs.git?rev=06e1d8f0ac33d8633198d837c4f9017ad466f358#06e1d8f0ac33d8633198d837c4f9017ad466f358"
+source = "git+https://github.com/zyycn/codex-proxy-rs.git?rev=80f7d53085f5c9552e7e74b796a0bec50586ee1b#80f7d53085f5c9552e7e74b796a0bec50586ee1b"
 dependencies = [
  "base64 0.23.1",
  "semver",

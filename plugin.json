@@ -10,17 +10,6 @@
   "main": "bin/plugin",
   "runtime": "trustedProcess",
   "contributes": { "management": { "version": 2 } },
-  "configurationSchema": {
-    "type": "object",
-    "properties": {
-      "admin_username": { "type": "string", "title": "管理员用户名", "default": "" },
-      "admin_password": { "type": "string", "title": "管理员密码", "minLength": 1 },
-      "admin_port": { "type": "integer", "title": "CPR 内部端口", "minimum": 1, "maximum": 65535, "description": "留空时使用 CPR_SERVER_PORT，未设置时使用 8080" }
-    },
-    "required": ["admin_password"],
-    "additionalProperties": false
-  },
-  "secretFields": ["admin_password"],
   "resources": {
     "web/index.html": "text/html",
     "web/app.css": "text/css",

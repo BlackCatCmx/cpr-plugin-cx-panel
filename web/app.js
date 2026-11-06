@@ -108,11 +108,12 @@ function renderAccount(account) {
   card.append(heading);
 
   const expiry = element('div', 'expiry');
-  expiry.append(element('span', 'label', '令牌中的套餐到期'));
-  const end = timestamp(account.subscriptionUntil);
-  const toneDate = end === null ? '' : end <= Date.now() ? 'expired' : end - Date.now() <= 86_400_000 ? 'soon' : 'valid';
-  expiry.append(element('span', `date ${toneDate}`, dateTime(account.subscriptionUntil) || '未知'));
-  if (end !== null) expiry.append(element('span', 'relative', `· ${relative(account.subscriptionUntil)}`));
+  expiry.append(element('span', 'label', '令牌到期时间'));
+  const end = account.accessTokenExpiresAtMs;
+  const remainingMs = end === null ? null : end - Date.now();
+  const toneDate = remainingMs === null ? '' : remainingMs < 3 * 86_400_000 ? 'urgent' : remainingMs <= 5 * 86_400_000 ? 'soon' : 'valid';
+  expiry.append(element('span', `date ${toneDate}`, dateTime(end) || '未知'));
+  if (end !== null) expiry.append(element('span', 'relative', `· ${relative(end)}`));
   card.append(expiry);
 
   if (account.windows.length) account.windows.forEach((windowData) => card.append(renderWindow(windowData)));

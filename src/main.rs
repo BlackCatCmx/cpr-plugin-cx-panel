@@ -1,5 +1,6 @@
+//! 插件进程握手与管理处理器入口
+
 use gateway_plugin_sdk::client::{PluginSession, SessionConfig};
-use std::sync::Arc;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -9,8 +10,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         SessionConfig::default(),
     )
     .await?;
-    let config = serde_json::from_value(session.handshake().configuration.clone())?;
-    let admin = Arc::new(cpr_plugin_cx_panel::AdminClient::new(config)?);
-    session.run(cpr_plugin_cx_panel::plugin(admin)?).await?;
+    session.run(cpr_plugin_cx_panel::plugin()?).await?;
     Ok(())
 }

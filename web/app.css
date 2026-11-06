@@ -53,7 +53,7 @@ button { font: inherit; cursor: pointer; }
 .expiry .date { font-weight: 700; }
 .expiry .date.valid { color: var(--green); }
 .expiry .date.soon { color: var(--amber); }
-.expiry .date.expired { color: var(--red); }
+.expiry .date.urgent { color: var(--red); }
 .expiry .relative { color: var(--muted); }
 .window { margin-top: 7px; }
 .window-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; min-width: 0; font-size: 12px; }
@@ -64,9 +64,9 @@ button { font: inherit; cursor: pointer; }
 .fill { height: 100%; border-radius: inherit; background: var(--green); }
 .fill.medium { background: var(--amber); }
 .fill.low { background: var(--red); }
-.account.account-disabled .plan, .account.account-disabled .account-name, .account.account-disabled .expiry, .account.account-disabled .window { opacity: .66; }
+.account.account-disabled .plan, .account.account-disabled .account-name, .account.account-disabled .window { opacity: .66; }
 .account.account-disabled .plan { border-color: var(--line); color: var(--muted); background: var(--line); box-shadow: none; }
-.account.account-disabled .expiry .date { color: var(--muted); }
+.account.account-disabled .expiry .date:not(.urgent) { color: var(--muted); }
 .account.account-disabled .fill { background: var(--muted); }
 .foot { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
 .empty { margin: 18px 0; color: var(--muted); }

@@ -13,6 +13,7 @@
   "resources": {
     "web/index.html": "text/html",
     "web/app.css": "text/css",
+    "web/flags.js": "text/javascript",
     "web/app.js": "text/javascript"
   }
 }

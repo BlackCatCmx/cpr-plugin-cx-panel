@@ -1,5 +1,7 @@
 //! Codex 账号额度、令牌到期时间与宿主管理操作
 
+use std::collections::HashMap;
+
 use gateway_plugin_sdk::{
     ErrorCode, PluginFault,
     call::{
@@ -35,10 +37,88 @@ struct AccountView {
     enabled: bool,
     credential_state: String,
     plan: Option<String>,
+    proxy_country: Option<String>,
     access_token_expires_at_ms: Option<i64>,
     observed_at_ms: Option<i64>,
     windows: Vec<QuotaWindowFacts>,
     error: Option<&'static str>,
+}
+
+#[derive(Deserialize)]
+struct AdminEnvelope<T> {
+    data: T,
+}
+
+#[derive(Deserialize)]
+struct AdminPage<T> {
+    items: Vec<T>,
+    page: AdminPageMeta,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdminPageMeta {
+    total_pages: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AccountProxy {
+    id: String,
+    outbound_proxy_id: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProxyRegion {
+    id: String,
+    enabled: bool,
+    detected_location: Option<DetectedLocation>,
+    last_test: Option<ProxyTest>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DetectedLocation {
+    location: Country,
+    exit_ipv4: Option<String>,
+    exit_ipv6: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct Country {
+    country: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProxyTest {
+    success: bool,
+    location: LocationStatus,
+    exit_ipv4: Option<String>,
+    exit_ipv6: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct LocationStatus {
+    status: String,
+}
+
+impl ProxyRegion {
+    fn country(&self) -> Option<&str> {
+        let detected = self.detected_location.as_ref()?;
+        let test = self.last_test.as_ref()?;
+        // 与宿主代理页一致，检测失败、地区冲突或出口变化时不沿用旧地区
+        if !self.enabled
+            || !test.success
+            || matches!(test.location.status.as_str(), "failed" | "conflict")
+            || test.exit_ipv4 != detected.exit_ipv4
+            || test.exit_ipv6 != detected.exit_ipv6
+        {
+            return None;
+        }
+        Some(&detected.location.country)
+    }
 }
 
 pub fn plugin() -> Result<ComposedPlugin, gateway_plugin_sdk::client::AuthorError> {
@@ -66,13 +146,18 @@ fn registration() -> ManagementRegistration {
             response_content_types: vec!["application/json".into()],
         })
         .collect(),
-        resources: ["web/index.html", "web/app.css", "web/app.js"]
-            .into_iter()
-            .map(|path| ManagementResource {
-                path: path.into(),
-                public: false,
-            })
-            .collect(),
+        resources: [
+            "web/index.html",
+            "web/app.css",
+            "web/flags.js",
+            "web/app.js",
+        ]
+        .into_iter()
+        .map(|path| ManagementResource {
+            path: path.into(),
+            public: false,
+        })
+        .collect(),
         pages: vec![ManagementPage {
             id: "codex-quota".into(),
             title: "Codex 额度".into(),
@@ -214,7 +299,69 @@ async fn load_accounts(host: &HostClient) -> Result<Vec<AccountView>, PluginFaul
             break;
         }
     }
+    if !output.is_empty() {
+        let accounts: Vec<AccountProxy> =
+            load_admin_pages(host, "/api/admin/accounts", "&provider=openai").await?;
+        let proxies: Vec<ProxyRegion> = load_admin_pages(host, "/api/admin/proxies", "").await?;
+        let countries: HashMap<_, _> = proxies
+            .iter()
+            .filter_map(|proxy| proxy.country().map(|country| (proxy.id.as_str(), country)))
+            .collect();
+        let account_countries: HashMap<_, _> = accounts
+            .iter()
+            .filter_map(|account| {
+                let country = countries.get(account.outbound_proxy_id.as_deref()?)?;
+                Some((account.id.as_str(), *country))
+            })
+            .collect();
+        for account in &mut output {
+            account.proxy_country = account_countries
+                .get(account.id.as_str())
+                .map(|s| (*s).into());
+        }
+    }
     Ok(output)
+}
+
+async fn load_admin_pages<T: DeserializeOwned>(
+    host: &HostClient,
+    path: &str,
+    query: &str,
+) -> Result<Vec<T>, PluginFault> {
+    let mut page = 1;
+    let mut output = Vec::new();
+    loop {
+        let mut response = host
+            .dispatch_http(HttpRequest {
+                settings: Value::Null,
+                method: "GET".into(),
+                uri: format!("{path}?page={page}&pageSize=200{query}"),
+                version: Version::Http11,
+                headers: Vec::new(),
+                timeout_ms: None,
+                body: HttpBody::empty(),
+            })
+            .await?;
+        let mut payload = Vec::new();
+        while let Some(frame) = response.body.read().await? {
+            if let HttpFrame::Data(bytes) = frame {
+                payload.extend(bytes);
+            }
+        }
+        if response.status != 200 {
+            return Err(PluginFault::new(
+                ErrorCode::Upstream,
+                format!("读取代理地区失败（{}）", response.status),
+            ));
+        }
+        let result: AdminEnvelope<AdminPage<T>> = serde_json::from_slice(&payload)
+            .map_err(|_| PluginFault::new(ErrorCode::Fault, "代理地区响应解析失败"))?;
+        output.extend(result.data.items);
+        if page >= result.data.page.total_pages {
+            return Ok(output);
+        }
+        page += 1;
+    }
 }
 
 async fn load_account(host: &HostClient, account: AuthRuntimeAccount) -> AccountView {
@@ -225,6 +372,7 @@ async fn load_account(host: &HostClient, account: AuthRuntimeAccount) -> Account
         enabled: account.enabled,
         credential_state: account.credential_state,
         plan: account.plan_type,
+        proxy_country: None,
         access_token_expires_at_ms: account.access_token_expires_at_ms,
         observed_at_ms: None,
         windows: Vec::new(),
@@ -267,5 +415,48 @@ mod tests {
     #[test]
     fn manifest_registers_management_page() {
         assert!(plugin().is_ok());
+    }
+
+    #[test]
+    fn proxy_country_requires_current_successful_exit() {
+        let proxy = json!({
+            "id": "proxy-test",
+            "enabled": true,
+            "detectedLocation": {
+                "location": {"country": "JP"},
+                "exitIpv4": "192.0.2.1", "exitIpv6": "2001:db8::1",
+            },
+            "lastTest": {
+                "success": true, "location": {"status": "detected"},
+                "exitIpv4": "192.0.2.1", "exitIpv6": "2001:db8::1",
+            },
+        });
+        let parsed: ProxyRegion = serde_json::from_value(proxy.clone()).unwrap();
+        assert_eq!(parsed.country(), Some("JP"));
+
+        let mut disabled = proxy.clone();
+        disabled["enabled"] = json!(false);
+        let parsed: ProxyRegion = serde_json::from_value(disabled).unwrap();
+        assert_eq!(parsed.country(), None);
+
+        for (field, value) in [
+            ("success", json!(false)),
+            ("location", json!({"status": "failed"})),
+            ("location", json!({"status": "conflict"})),
+            ("exitIpv4", json!("192.0.2.2")),
+            ("exitIpv6", json!("2001:db8::2")),
+        ] {
+            let mut invalid = proxy.clone();
+            invalid["lastTest"][field] = value;
+            let parsed: ProxyRegion = serde_json::from_value(invalid).unwrap();
+            assert_eq!(parsed.country(), None, "{field}");
+        }
+
+        for field in ["detectedLocation", "lastTest"] {
+            let mut missing = proxy.clone();
+            missing[field] = Value::Null;
+            let parsed: ProxyRegion = serde_json::from_value(missing).unwrap();
+            assert_eq!(parsed.country(), None, "{field}");
+        }
     }
 }

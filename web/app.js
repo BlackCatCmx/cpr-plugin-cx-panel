@@ -86,6 +86,16 @@ function renderAccount(account) {
   const lower = plan.toLowerCase();
   const tone = lower.includes('k12') ? 'k12' : lower.includes('team') ? 'team' : lower.includes('pro') ? 'pro' : lower.includes('plus') ? 'plus' : 'neutral';
   heading.append(element('span', `plan ${tone}`, plan.toUpperCase()));
+  const flag = element('img', 'country-flag');
+  const country = account.proxyCountry;
+  const flagUrl = /^[A-Z]{2}$/.test(country) ? countryFlags[country] : undefined;
+  const region = flagUrl ? new Intl.DisplayNames(['zh-CN'], { type: 'region' }).of(country) : '未知地区';
+  flag.src = flagUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23858b87" stroke-width="1.5"%3E%3Ccircle cx="12" cy="12" r="10"/%3E%3Cellipse cx="12" cy="12" rx="4" ry="10"/%3E%3Cpath d="M2 12h20M4 6.5h16M4 17.5h16"/%3E%3C/svg%3E';
+  flag.alt = region;
+  flag.title = region;
+  flag.width = 18;
+  flag.height = 18;
+  heading.append(flag);
   const title = element('span', 'account-name', account.email || account.name || account.id);
   title.title = account.email || account.name || account.id;
   heading.append(title);

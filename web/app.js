@@ -110,9 +110,9 @@ function renderAccount(account) {
   heading.append(statusButton);
   const refreshButton = element('button', 'account-refresh', '↻');
   refreshButton.type = 'button';
-  refreshButton.title = account.enabled ? '主动刷新额度' : '已停用账号不能刷新额度';
+  refreshButton.title = '主动刷新额度';
   refreshButton.setAttribute('aria-label', `刷新 ${account.email || account.name || account.id} 的额度`);
-  refreshButton.disabled = !account.enabled || busyAccounts.has(account.id);
+  refreshButton.disabled = busyAccounts.has(account.id);
   refreshButton.addEventListener('click', () => accountAction(account, 'api/refresh'));
   heading.append(refreshButton);
   card.append(heading);
